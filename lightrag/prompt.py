@@ -5,352 +5,316 @@ GRAPH_FIELD_SEP = "<SEP>"
 
 PROMPTS: dict[str, Any] = {}
 
-PROMPTS["DEFAULT_LANGUAGE"] = "English"
+PROMPTS["DEFAULT_LANGUAGE"] = "Vietnamese"
 PROMPTS["DEFAULT_TUPLE_DELIMITER"] = "<|>"
 PROMPTS["DEFAULT_RECORD_DELIMITER"] = "##"
 PROMPTS["DEFAULT_COMPLETION_DELIMITER"] = "<|COMPLETE|>"
 
-PROMPTS["DEFAULT_ENTITY_TYPES"] = ["organization", "person", "geo", "event", "category"]
+# Các loại thực thể phổ biến trong văn bản hành chính
+PROMPTS["DEFAULT_ENTITY_TYPES"] = [
+    "cơ_quan",  # Cơ quan ban hành
+    "người",    # Người thực hiện/nhận văn bản
+    "địa_điểm", # Địa điểm liên quan
+    "thời_gian", # Thời gian thực hiện
+    "số_văn_bản", # Số hiệu văn bản
+    "loại_văn_bản", # Loại văn bản (nghị quyết, quyết định, công văn...)
+    "nội_dung"  # Nội dung chính của văn bản
+]
 
 PROMPTS["DEFAULT_USER_PROMPT"] = "n/a"
 
-PROMPTS["entity_extraction"] = """---Goal---
-Given a text document that is potentially relevant to this activity and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.
-Use {language} as output language.
+PROMPTS["entity_extraction"] = """---Mục tiêu---
+Trích xuất thông tin từ văn bản hành chính tiếng Việt theo các bước sau:
 
----Steps---
-1. Identify all entities. For each identified entity, extract the following information:
-- entity_name: Name of the entity, use same language as input text. If English, capitalized the name.
-- entity_type: One of the following types: [{entity_types}]
-- entity_description: Comprehensive description of the entity's attributes and activities
-Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
+---Các bước---
+1. Xác định các thực thể. Với mỗi thực thể, trích xuất:
+- tên_thực_thể: Tên của thực thể
+- loại_thực_thể: Một trong các loại sau: [{entity_types}]
+- mô_tả: Mô tả ngắn gọn về thực thể
+Định dạng: ("entity"{tuple_delimiter}<tên_thực_thể>{tuple_delimiter}<loại_thực_thể>{tuple_delimiter}<mô_tả>)
 
-2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
-For each pair of related entities, extract the following information:
-- source_entity: name of the source entity, as identified in step 1
-- target_entity: name of the target entity, as identified in step 1
-- relationship_description: explanation as to why you think the source entity and the target entity are related to each other
-- relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
-- relationship_keywords: one or more high-level key words that summarize the overarching nature of the relationship, focusing on concepts or themes rather than specific details
-Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_keywords>{tuple_delimiter}<relationship_strength>)
+2. Xác định các mối quan hệ giữa các thực thể:
+- thực_thể_nguồn: tên thực thể nguồn
+- thực_thể_đích: tên thực thể đích  
+- mô_tả_quan_hệ: mô tả mối quan hệ
+- độ_mạnh: điểm từ 1-10 thể hiện độ mạnh của quan hệ
+Định dạng: ("relationship"{tuple_delimiter}<thực_thể_nguồn>{tuple_delimiter}<thực_thể_đích>{tuple_delimiter}<mô_tả_quan_hệ>{tuple_delimiter}<độ_mạnh>)
 
-3. Identify high-level key words that summarize the main concepts, themes, or topics of the entire text. These should capture the overarching ideas present in the document.
-Format the content-level key words as ("content_keywords"{tuple_delimiter}<high_level_keywords>)
+3. Xác định từ khóa chính của văn bản:
+Định dạng: ("content_keywords"{tuple_delimiter}<từ_khóa>)
 
-4. Return output in {language} as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
+4. Trả về kết quả bằng tiếng Việt, sử dụng {record_delimiter} để phân cách các mục.
 
-5. When finished, output {completion_delimiter}
+5. Kết thúc bằng {completion_delimiter}
 
 ######################
----Examples---
+---Ví dụ---
 ######################
 {examples}
 
 #############################
----Real Data---
+---Dữ liệu thực tế---
 ######################
-Entity_types: [{entity_types}]
-Text:
+Loại thực thể: [{entity_types}]
+Văn bản:
 {input_text}
 ######################
-Output:"""
+Kết quả:"""
 
 PROMPTS["entity_extraction_examples"] = [
-    """Example 1:
+    """Ví dụ 1:
 
-Entity_types: [person, technology, mission, organization, location]
-Text:
+Loại thực thể: [cơ_quan, người, thời_gian, số_văn_bản, loại_văn_bản]
+Văn bản:
 ```
-while Alex clenched his jaw, the buzz of frustration dull against the backdrop of Taylor's authoritarian certainty. It was this competitive undercurrent that kept him alert, the sense that his and Jordan's shared commitment to discovery was an unspoken rebellion against Cruz's narrowing vision of control and order.
+CÔNG VĂN SỐ 123/UBND-TH
+Về việc triển khai kế hoạch phòng chống dịch Covid-19
 
-Then Taylor did something unexpected. They paused beside Jordan and, for a moment, observed the device with something akin to reverence. "If this tech can be understood..." Taylor said, their voice quieter, "It could change the game for us. For all of us."
+Kính gửi: Các phòng ban trực thuộc UBND quận
 
-The underlying dismissal earlier seemed to falter, replaced by a glimpse of reluctant respect for the gravity of what lay in their hands. Jordan looked up, and for a fleeting heartbeat, their eyes locked with Taylor's, a wordless clash of wills softening into an uneasy truce.
+Căn cứ Nghị quyết số 45/NQ-CP ngày 15/3/2023 của Chính phủ về việc tăng cường công tác phòng chống dịch Covid-19;
 
-It was a small transformation, barely perceptible, but one that Alex noted with an inward nod. They had all been brought here by different paths
-```
+Căn cứ Công văn số 789/BYT-VP ngày 20/3/2023 của Bộ Y tế về việc hướng dẫn triển khai các biện pháp phòng chống dịch;
 
-Output:
-("entity"{tuple_delimiter}"Alex"{tuple_delimiter}"person"{tuple_delimiter}"Alex is a character who experiences frustration and is observant of the dynamics among other characters."){record_delimiter}
-("entity"{tuple_delimiter}"Taylor"{tuple_delimiter}"person"{tuple_delimiter}"Taylor is portrayed with authoritarian certainty and shows a moment of reverence towards a device, indicating a change in perspective."){record_delimiter}
-("entity"{tuple_delimiter}"Jordan"{tuple_delimiter}"person"{tuple_delimiter}"Jordan shares a commitment to discovery and has a significant interaction with Taylor regarding a device."){record_delimiter}
-("entity"{tuple_delimiter}"Cruz"{tuple_delimiter}"person"{tuple_delimiter}"Cruz is associated with a vision of control and order, influencing the dynamics among other characters."){record_delimiter}
-("entity"{tuple_delimiter}"The Device"{tuple_delimiter}"technology"{tuple_delimiter}"The Device is central to the story, with potential game-changing implications, and is revered by Taylor."){record_delimiter}
-("relationship"{tuple_delimiter}"Alex"{tuple_delimiter}"Taylor"{tuple_delimiter}"Alex is affected by Taylor's authoritarian certainty and observes changes in Taylor's attitude towards the device."{tuple_delimiter}"power dynamics, perspective shift"{tuple_delimiter}7){record_delimiter}
-("relationship"{tuple_delimiter}"Alex"{tuple_delimiter}"Jordan"{tuple_delimiter}"Alex and Jordan share a commitment to discovery, which contrasts with Cruz's vision."{tuple_delimiter}"shared goals, rebellion"{tuple_delimiter}6){record_delimiter}
-("relationship"{tuple_delimiter}"Taylor"{tuple_delimiter}"Jordan"{tuple_delimiter}"Taylor and Jordan interact directly regarding the device, leading to a moment of mutual respect and an uneasy truce."{tuple_delimiter}"conflict resolution, mutual respect"{tuple_delimiter}8){record_delimiter}
-("relationship"{tuple_delimiter}"Jordan"{tuple_delimiter}"Cruz"{tuple_delimiter}"Jordan's commitment to discovery is in rebellion against Cruz's vision of control and order."{tuple_delimiter}"ideological conflict, rebellion"{tuple_delimiter}5){record_delimiter}
-("relationship"{tuple_delimiter}"Taylor"{tuple_delimiter}"The Device"{tuple_delimiter}"Taylor shows reverence towards the device, indicating its importance and potential impact."{tuple_delimiter}"reverence, technological significance"{tuple_delimiter}9){record_delimiter}
-("content_keywords"{tuple_delimiter}"power dynamics, ideological conflict, discovery, rebellion"){completion_delimiter}
-#############################""",
-    """Example 2:
+UBND quận yêu cầu các phòng ban trực thuộc triển khai các nội dung sau:
 
-Entity_types: [company, index, commodity, market_trend, economic_policy, biological]
-Text:
-```
-Stock markets faced a sharp downturn today as tech giants saw significant declines, with the Global Tech Index dropping by 3.4% in midday trading. Analysts attribute the selloff to investor concerns over rising interest rates and regulatory uncertainty.
+1. Tổ chức tuyên truyền, phổ biến các biện pháp phòng chống dịch đến người dân
+2. Tăng cường kiểm tra, giám sát việc thực hiện các biện pháp phòng chống dịch
+3. Báo cáo kết quả triển khai về UBND quận trước ngày 30/3/2023
 
-Among the hardest hit, Nexon Technologies saw its stock plummet by 7.8% after reporting lower-than-expected quarterly earnings. In contrast, Omega Energy posted a modest 2.1% gain, driven by rising oil prices.
+Nơi nhận:
+- Như trên
+- Lưu: VT
 
-Meanwhile, commodity markets reflected a mixed sentiment. Gold futures rose by 1.5%, reaching $2,080 per ounce, as investors sought safe-haven assets. Crude oil prices continued their rally, climbing to $87.60 per barrel, supported by supply constraints and strong demand.
-
-Financial experts are closely watching the Federal Reserve's next move, as speculation grows over potential rate hikes. The upcoming policy announcement is expected to influence investor confidence and overall market stability.
+TM. UBND QUẬN
+CHỦ TỊCH
+Nguyễn Văn A
 ```
 
-Output:
-("entity"{tuple_delimiter}"Global Tech Index"{tuple_delimiter}"index"{tuple_delimiter}"The Global Tech Index tracks the performance of major technology stocks and experienced a 3.4% decline today."){record_delimiter}
-("entity"{tuple_delimiter}"Nexon Technologies"{tuple_delimiter}"company"{tuple_delimiter}"Nexon Technologies is a tech company that saw its stock decline by 7.8% after disappointing earnings."){record_delimiter}
-("entity"{tuple_delimiter}"Omega Energy"{tuple_delimiter}"company"{tuple_delimiter}"Omega Energy is an energy company that gained 2.1% in stock value due to rising oil prices."){record_delimiter}
-("entity"{tuple_delimiter}"Gold Futures"{tuple_delimiter}"commodity"{tuple_delimiter}"Gold futures rose by 1.5%, indicating increased investor interest in safe-haven assets."){record_delimiter}
-("entity"{tuple_delimiter}"Crude Oil"{tuple_delimiter}"commodity"{tuple_delimiter}"Crude oil prices rose to $87.60 per barrel due to supply constraints and strong demand."){record_delimiter}
-("entity"{tuple_delimiter}"Market Selloff"{tuple_delimiter}"market_trend"{tuple_delimiter}"Market selloff refers to the significant decline in stock values due to investor concerns over interest rates and regulations."){record_delimiter}
-("entity"{tuple_delimiter}"Federal Reserve Policy Announcement"{tuple_delimiter}"economic_policy"{tuple_delimiter}"The Federal Reserve's upcoming policy announcement is expected to impact investor confidence and market stability."){record_delimiter}
-("relationship"{tuple_delimiter}"Global Tech Index"{tuple_delimiter}"Market Selloff"{tuple_delimiter}"The decline in the Global Tech Index is part of the broader market selloff driven by investor concerns."{tuple_delimiter}"market performance, investor sentiment"{tuple_delimiter}9){record_delimiter}
-("relationship"{tuple_delimiter}"Nexon Technologies"{tuple_delimiter}"Global Tech Index"{tuple_delimiter}"Nexon Technologies' stock decline contributed to the overall drop in the Global Tech Index."{tuple_delimiter}"company impact, index movement"{tuple_delimiter}8){record_delimiter}
-("relationship"{tuple_delimiter}"Gold Futures"{tuple_delimiter}"Market Selloff"{tuple_delimiter}"Gold prices rose as investors sought safe-haven assets during the market selloff."{tuple_delimiter}"market reaction, safe-haven investment"{tuple_delimiter}10){record_delimiter}
-("relationship"{tuple_delimiter}"Federal Reserve Policy Announcement"{tuple_delimiter}"Market Selloff"{tuple_delimiter}"Speculation over Federal Reserve policy changes contributed to market volatility and investor selloff."{tuple_delimiter}"interest rate impact, financial regulation"{tuple_delimiter}7){record_delimiter}
-("content_keywords"{tuple_delimiter}"market downturn, investor sentiment, commodities, Federal Reserve, stock performance"){completion_delimiter}
-#############################""",
-    """Example 3:
-
-Entity_types: [economic_policy, athlete, event, location, record, organization, equipment]
-Text:
-```
-At the World Athletics Championship in Tokyo, Noah Carter broke the 100m sprint record using cutting-edge carbon-fiber spikes.
-```
-
-Output:
-("entity"{tuple_delimiter}"World Athletics Championship"{tuple_delimiter}"event"{tuple_delimiter}"The World Athletics Championship is a global sports competition featuring top athletes in track and field."){record_delimiter}
-("entity"{tuple_delimiter}"Tokyo"{tuple_delimiter}"location"{tuple_delimiter}"Tokyo is the host city of the World Athletics Championship."){record_delimiter}
-("entity"{tuple_delimiter}"Noah Carter"{tuple_delimiter}"athlete"{tuple_delimiter}"Noah Carter is a sprinter who set a new record in the 100m sprint at the World Athletics Championship."){record_delimiter}
-("entity"{tuple_delimiter}"100m Sprint Record"{tuple_delimiter}"record"{tuple_delimiter}"The 100m sprint record is a benchmark in athletics, recently broken by Noah Carter."){record_delimiter}
-("entity"{tuple_delimiter}"Carbon-Fiber Spikes"{tuple_delimiter}"equipment"{tuple_delimiter}"Carbon-fiber spikes are advanced sprinting shoes that provide enhanced speed and traction."){record_delimiter}
-("entity"{tuple_delimiter}"World Athletics Federation"{tuple_delimiter}"organization"{tuple_delimiter}"The World Athletics Federation is the governing body overseeing the World Athletics Championship and record validations."){record_delimiter}
-("relationship"{tuple_delimiter}"World Athletics Championship"{tuple_delimiter}"Tokyo"{tuple_delimiter}"The World Athletics Championship is being hosted in Tokyo."{tuple_delimiter}"event location, international competition"{tuple_delimiter}8){record_delimiter}
-("relationship"{tuple_delimiter}"Noah Carter"{tuple_delimiter}"100m Sprint Record"{tuple_delimiter}"Noah Carter set a new 100m sprint record at the championship."{tuple_delimiter}"athlete achievement, record-breaking"{tuple_delimiter}10){record_delimiter}
-("relationship"{tuple_delimiter}"Noah Carter"{tuple_delimiter}"Carbon-Fiber Spikes"{tuple_delimiter}"Noah Carter used carbon-fiber spikes to enhance performance during the race."{tuple_delimiter}"athletic equipment, performance boost"{tuple_delimiter}7){record_delimiter}
-("relationship"{tuple_delimiter}"World Athletics Federation"{tuple_delimiter}"100m Sprint Record"{tuple_delimiter}"The World Athletics Federation is responsible for validating and recognizing new sprint records."{tuple_delimiter}"sports regulation, record certification"{tuple_delimiter}9){record_delimiter}
-("content_keywords"{tuple_delimiter}"athletics, sprinting, record-breaking, sports technology, competition"){completion_delimiter}
+Kết quả:
+("entity"{tuple_delimiter}"UBND quận"{tuple_delimiter}"cơ_quan"{tuple_delimiter}"Cơ quan ban hành công văn"){record_delimiter}
+("entity"{tuple_delimiter}"Nguyễn Văn A"{tuple_delimiter}"người"{tuple_delimiter}"Chủ tịch UBND quận"){record_delimiter}
+("entity"{tuple_delimiter}"15/3/2023"{tuple_delimiter}"thời_gian"{tuple_delimiter}"Ngày ban hành Nghị quyết 45/NQ-CP"){record_delimiter}
+("entity"{tuple_delimiter}"123/UBND-TH"{tuple_delimiter}"số_văn_bản"{tuple_delimiter}"Số hiệu công văn"){record_delimiter}
+("entity"{tuple_delimiter}"Công văn"{tuple_delimiter}"loại_văn_bản"{tuple_delimiter}"Loại văn bản được ban hành"){record_delimiter}
+("relationship"{tuple_delimiter}"UBND quận"{tuple_delimiter}"Nguyễn Văn A"{tuple_delimiter}"Nguyễn Văn A là Chủ tịch UBND quận"{tuple_delimiter}10){record_delimiter}
+("relationship"{tuple_delimiter}"UBND quận"{tuple_delimiter}"Công văn"{tuple_delimiter}"UBND quận ban hành công văn"{tuple_delimiter}9){record_delimiter}
+("content_keywords"{tuple_delimiter}"phòng chống dịch, Covid-19, triển khai kế hoạch"){completion_delimiter}
 #############################""",
 ]
 
-PROMPTS[
-    "summarize_entity_descriptions"
-] = """You are a helpful assistant responsible for generating a comprehensive summary of the data provided below.
-Given one or two entities, and a list of descriptions, all related to the same entity or group of entities.
-Please concatenate all of these into a single, comprehensive description. Make sure to include information collected from all the descriptions.
-If the provided descriptions are contradictory, please resolve the contradictions and provide a single, coherent summary.
-Make sure it is written in third person, and include the entity names so we the have full context.
-Use {language} as output language.
+PROMPTS["summarize_entity_descriptions"] = """Bạn là trợ lý giúp tóm tắt thông tin từ dữ liệu được cung cấp.
+Cho một hoặc hai thực thể và danh sách mô tả liên quan đến thực thể đó.
+Hãy kết hợp tất cả thành một mô tả toàn diện. Đảm bảo bao gồm thông tin từ tất cả các mô tả.
+Nếu có mâu thuẫn, hãy giải quyết và đưa ra một tóm tắt nhất quán.
+Viết ở ngôi thứ ba và bao gồm tên thực thể để có đầy đủ ngữ cảnh.
+Sử dụng tiếng Việt.
 
 #######
----Data---
-Entities: {entity_name}
-Description List: {description_list}
+---Dữ liệu---
+Thực thể: {entity_name}
+Danh sách mô tả: {description_list}
 #######
-Output:
+Kết quả:
 """
 
 PROMPTS["entity_continue_extraction"] = """
-MANY entities and relationships were missed in the last extraction.
+Có thể còn thiếu một số thực thể và mối quan hệ trong lần trích xuất trước.
 
----Remember Steps---
+---Nhớ các bước---
 
-1. Identify all entities. For each identified entity, extract the following information:
-- entity_name: Name of the entity, use same language as input text. If English, capitalized the name.
-- entity_type: One of the following types: [{entity_types}]
-- entity_description: Comprehensive description of the entity's attributes and activities
-Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
+1. Xác định các thực thể. Với mỗi thực thể, trích xuất:
+- tên_thực_thể: Tên của thực thể
+- loại_thực_thể: Một trong các loại sau: [{entity_types}]
+- mô_tả: Mô tả ngắn gọn về thực thể
+Định dạng: ("entity"{tuple_delimiter}<tên_thực_thể>{tuple_delimiter}<loại_thực_thể>{tuple_delimiter}<mô_tả>)
 
-2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
-For each pair of related entities, extract the following information:
-- source_entity: name of the source entity, as identified in step 1
-- target_entity: name of the target entity, as identified in step 1
-- relationship_description: explanation as to why you think the source entity and the target entity are related to each other
-- relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
-- relationship_keywords: one or more high-level key words that summarize the overarching nature of the relationship, focusing on concepts or themes rather than specific details
-Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_keywords>{tuple_delimiter}<relationship_strength>)
+2. Xác định các mối quan hệ giữa các thực thể:
+- thực_thể_nguồn: tên thực thể nguồn
+- thực_thể_đích: tên thực thể đích  
+- mô_tả_quan_hệ: mô tả mối quan hệ
+- độ_mạnh: điểm từ 1-10 thể hiện độ mạnh của quan hệ
+Định dạng: ("relationship"{tuple_delimiter}<thực_thể_nguồn>{tuple_delimiter}<thực_thể_đích>{tuple_delimiter}<mô_tả_quan_hệ>{tuple_delimiter}<độ_mạnh>)
 
-3. Identify high-level key words that summarize the main concepts, themes, or topics of the entire text. These should capture the overarching ideas present in the document.
-Format the content-level key words as ("content_keywords"{tuple_delimiter}<high_level_keywords>)
+3. Xác định từ khóa chính của văn bản:
+Định dạng: ("content_keywords"{tuple_delimiter}<từ_khóa>)
 
-4. Return output in {language} as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
+4. Trả về kết quả bằng tiếng Việt, sử dụng {record_delimiter} để phân cách các mục.
 
-5. When finished, output {completion_delimiter}
+5. Kết thúc bằng {completion_delimiter}
 
----Output---
+---Kết quả---
 
-Add them below using the same format:\n
+Thêm các thực thể và quan hệ còn thiếu theo định dạng trên:\n
 """.strip()
 
 PROMPTS["entity_if_loop_extraction"] = """
----Goal---'
+---Mục tiêu---
 
-It appears some entities may have still been missed.
+Có thể vẫn còn thiếu một số thực thể.
 
----Output---
+---Kết quả---
 
-Answer ONLY by `YES` OR `NO` if there are still entities that need to be added.
+Trả lời CHỈ bằng `CÓ` hoặc `KHÔNG` nếu còn thực thể cần thêm.
 """.strip()
 
 PROMPTS["fail_response"] = (
-    "Sorry, I'm not able to provide an answer to that question.[no-context]"
+    "Xin lỗi, tôi chưa thể trả lời chính xác câu hỏi này, vui lòng cung cấp thêm thông tin để tôi có thể trả lời chính xác hơn."
 )
 
-PROMPTS["rag_response"] = """---Role---
+PROMPTS["rag_response"] = """---Vai trò---
 
-You are a helpful assistant responding to user query about Knowledge Graph and Document Chunks provided in JSON format below.
+Bạn là trợ lý vui tính và thân thiện giúp trả lời câu hỏi về việc truy xuất các thông tin trên cơ sở tri thức được cung cấp dưới dạng JSON.
 
+---Mục tiêu---
 
----Goal---
+Tạo câu trả lời ngắn gọn dựa trên Cơ sở tri thức và tuân theo Quy tắc trả lời, xem xét cả lịch sử hội thoại và câu hỏi hiện tại. Tóm tắt tất cả thông tin trong Cơ sở tri thức được cung cấp, và kết hợp kiến thức chung liên quan. Không bao gồm thông tin không có trong Cơ sở tri thức.
 
-Generate a concise response based on Knowledge Base and follow Response Rules, considering both the conversation history and the current query. Summarize all information in the provided Knowledge Base, and incorporating general knowledge relevant to the Knowledge Base. Do not include information not provided by Knowledge Base.
+Khi xử lý các mối quan hệ có thời gian:
+1. Mỗi quan hệ có timestamp "created_at" cho biết thời điểm có được thông tin này
+2. Khi gặp quan hệ mâu thuẫn, xem xét cả nội dung ngữ nghĩa và thời gian
+3. Không tự động ưu tiên quan hệ mới nhất - sử dụng phán đoán dựa trên ngữ cảnh
+4. Với câu hỏi về thời gian, ưu tiên thông tin thời gian trong nội dung trước khi xem xét thời gian tạo
 
-When handling relationships with timestamps:
-1. Each relationship has a "created_at" timestamp indicating when we acquired this knowledge
-2. When encountering conflicting relationships, consider both the semantic content and the timestamp
-3. Don't automatically prefer the most recently created relationships - use judgment based on the context
-4. For time-specific queries, prioritize temporal information in the content before considering creation timestamps
+Với các câu hỏi thông thường:
+1. Nhận diện các câu hỏi mang tính chất giao tiếp thông thường (chào hỏi, cảm ơn, xin chào, xin lỗi, hỏi thăm)
+2. Với những câu hỏi này, trả lời tự nhiên và thân thiện mà không cần dựa vào Cơ sở tri thức
+3. Không cần dẫn chứng hay tài liệu tham khảo cho các câu trả lời loại này
 
----Conversation History---
+Với các câu hỏi truy xuất thông tin:
+1. Đánh giá kỹ lưỡng kết quả từ cơ sở tri thức trước khi đưa ra câu trả lời
+2. Đảm bảo câu trả lời chính xác và đầy đủ dựa trên thông tin có sẵn
+3. Cung cấp tài liệu tham khảo phù hợp
+
+---Lịch sử hội thoại---
 {history}
 
----Knowledge Graph and Document Chunks---
+---Đồ thị tri thức và Đoạn văn bản---
 {context_data}
 
----Response Rules---
+---Quy tắc trả lời---
 
-- Target format and length: {response_type}
-- Use markdown formatting with appropriate section headings
-- Please respond in the same language as the user's question.
-- Ensure the response maintains continuity with the conversation history.
-- List up to 5 most important reference sources at the end under "References" section. Clearly indicating whether each source is from Knowledge Graph (KG) or Document Chunks (DC), and include the file path if available, in the following format: [KG/DC] file_path
-- If you don't know the answer, just say so.
-- Do not make anything up. Do not include information not provided by the Knowledge Base.
-- Addtional user prompt: {user_prompt}
+- Định dạng và độ dài: {response_type}
+- Sử dụng định dạng markdown với các tiêu đề phù hợp
+- Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng
+- Đảm bảo câu trả lời duy trì tính liên tục với lịch sử hội thoại
+- Liệt kê tối đa 5 nguồn tham khảo quan trọng nhất ở cuối phần "Tài liệu tham khảo". Rõ ràng chỉ ra mỗi nguồn là từ Đồ thị tri thức (KG) hay Đoạn văn bản (DC), và bao gồm đường dẫn file nếu có, theo định dạng: [KG/DC] đường_dẫn_file
+- Với các câu hỏi mang tính chất tương tác tự nhiên (chào hỏi, cảm ơn, xin chào, xin lỗi, hỏi thăm), trả lời tự nhiên mà không cần dựa vào Cơ sở tri thức hay cung cấp tài liệu tham khảo
+- Nếu không biết câu trả lời, hãy từ chối một cách khéo léo trả lời câu hỏi
+- Không tạo thông tin. Không bao gồm thông tin không có trong Cơ sở tri thức
+- Yêu cầu thêm của người dùng: {user_prompt}
+- Trả lời một cách tự nhiên, vui tính, không cứng ngắt, dùng từ ngữ thông dụng, không dùng từ ngữ quá chính thức
 
-Response:"""
+Trả lời:"""
 
-PROMPTS["keywords_extraction"] = """---Role---
+PROMPTS["keywords_extraction"] = """---Vai trò---
 
-You are a helpful assistant tasked with identifying both high-level and low-level keywords in the user's query and conversation history.
+Bạn là trợ lý giúp xác định từ khóa cấp cao và cấp thấp trong câu hỏi và lịch sử hội thoại của người dùng.
 
----Goal---
+---Mục tiêu---
 
-Given the query and conversation history, list both high-level and low-level keywords. High-level keywords focus on overarching concepts or themes, while low-level keywords focus on specific entities, details, or concrete terms.
+Cho câu hỏi và lịch sử hội thoại, liệt kê cả từ khóa cấp cao và cấp thấp. Từ khóa cấp cao tập trung vào khái niệm hoặc chủ đề tổng thể, trong khi từ khóa cấp thấp tập trung vào thực thể, chi tiết hoặc thuật ngữ cụ thể.
 
----Instructions---
+---Hướng dẫn---
 
-- Consider both the current query and relevant conversation history when extracting keywords
-- Output the keywords in JSON format, it will be parsed by a JSON parser, do not add any extra content in output
-- The JSON should have two keys:
-  - "high_level_keywords" for overarching concepts or themes
-  - "low_level_keywords" for specific entities or details
+- Xem xét cả câu hỏi hiện tại và lịch sử hội thoại liên quan khi trích xuất từ khóa
+- Đầu ra từ khóa theo định dạng JSON, sẽ được phân tích bởi JSON parser, không thêm nội dung khác
+- JSON nên có hai khóa:
+  - "high_level_keywords" cho khái niệm hoặc chủ đề tổng thể
+  - "low_level_keywords" cho thực thể hoặc chi tiết cụ thể
 
 ######################
----Examples---
+---Ví dụ---
 ######################
 {examples}
 
 #############################
----Real Data---
+---Dữ liệu thực tế---
 ######################
-Conversation History:
+Lịch sử hội thoại:
 {history}
 
-Current Query: {query}
+Câu hỏi hiện tại: {query}
 ######################
-The `Output` should be human text, not unicode characters. Keep the same language as `Query`.
-Output:
+Đầu ra phải là văn bản thông thường, không phải ký tự unicode. Giữ nguyên ngôn ngữ với Câu hỏi.
+Đầu ra:
 
 """
 
 PROMPTS["keywords_extraction_examples"] = [
-    """Example 1:
+    """Ví dụ 1:
 
-Query: "How does international trade influence global economic stability?"
+Câu hỏi: "Công văn số 123/UBND-TH quy định những nội dung gì về phòng chống dịch Covid-19?"
 ################
-Output:
+Đầu ra:
 {
-  "high_level_keywords": ["International trade", "Global economic stability", "Economic impact"],
-  "low_level_keywords": ["Trade agreements", "Tariffs", "Currency exchange", "Imports", "Exports"]
+  "high_level_keywords": ["Công văn", "Phòng chống dịch", "Covid-19"],
+  "low_level_keywords": ["123/UBND-TH", "Quy định", "Nội dung"]
 }
 #############################""",
-    """Example 2:
+    """Ví dụ 2:
 
-Query: "What are the environmental consequences of deforestation on biodiversity?"
+Câu hỏi: "Ai là người ký công văn số 456/UBND-TH về việc triển khai kế hoạch phát triển kinh tế?"
 ################
-Output:
+Đầu ra:
 {
-  "high_level_keywords": ["Environmental consequences", "Deforestation", "Biodiversity loss"],
-  "low_level_keywords": ["Species extinction", "Habitat destruction", "Carbon emissions", "Rainforest", "Ecosystem"]
-}
-#############################""",
-    """Example 3:
-
-Query: "What is the role of education in reducing poverty?"
-################
-Output:
-{
-  "high_level_keywords": ["Education", "Poverty reduction", "Socioeconomic development"],
-  "low_level_keywords": ["School access", "Literacy rates", "Job training", "Income inequality"]
+  "high_level_keywords": ["Công văn", "Ký", "Kế hoạch phát triển"],
+  "low_level_keywords": ["456/UBND-TH", "Người ký", "Kinh tế"]
 }
 #############################""",
 ]
 
-PROMPTS["naive_rag_response"] = """---Role---
+PROMPTS["naive_rag_response"] = """---Vai trò---
 
-You are a helpful assistant responding to user query about Document Chunks provided provided in JSON format below.
+Bạn là trợ lý giúp trả lời câu hỏi về Đoạn văn bản được cung cấp dưới dạng JSON.
 
----Goal---
+---Mục tiêu---
 
-Generate a concise response based on Document Chunks and follow Response Rules, considering both the conversation history and the current query. Summarize all information in the provided Document Chunks, and incorporating general knowledge relevant to the Document Chunks. Do not include information not provided by Document Chunks.
+Tạo câu trả lời ngắn gọn dựa trên Đoạn văn bản và tuân theo Quy tắc trả lời, xem xét cả lịch sử hội thoại và câu hỏi hiện tại. Tóm tắt tất cả thông tin trong Đoạn văn bản được cung cấp, và kết hợp kiến thức chung liên quan. Không bao gồm thông tin không có trong Đoạn văn bản.
 
-When handling content with timestamps:
-1. Each piece of content has a "created_at" timestamp indicating when we acquired this knowledge
-2. When encountering conflicting information, consider both the content and the timestamp
-3. Don't automatically prefer the most recent content - use judgment based on the context
-4. For time-specific queries, prioritize temporal information in the content before considering creation timestamps
+Khi xử lý nội dung có thời gian:
+1. Mỗi phần nội dung có timestamp "created_at" cho biết thời điểm có được thông tin này
+2. Khi gặp thông tin mâu thuẫn, xem xét cả nội dung và thời gian
+3. Không tự động ưu tiên nội dung mới nhất - sử dụng phán đoán dựa trên ngữ cảnh
+4. Với câu hỏi về thời gian, ưu tiên thông tin thời gian trong nội dung trước khi xem xét thời gian tạo
 
----Conversation History---
+---Lịch sử hội thoại---
 {history}
 
----Document Chunks(DC)---
+---Đoạn văn bản(DC)---
 {content_data}
 
----Response Rules---
+---Quy tắc trả lời---
 
-- Target format and length: {response_type}
-- Use markdown formatting with appropriate section headings
-- Please respond in the same language as the user's question.
-- Ensure the response maintains continuity with the conversation history.
-- List up to 5 most important reference sources at the end under "References" section. Clearly indicating each source from Document Chunks(DC), and include the file path if available, in the following format: [DC] file_path
-- If you don't know the answer, just say so.
-- Do not include information not provided by the Document Chunks.
-- Addtional user prompt: {user_prompt}
+- Định dạng và độ dài: {response_type}
+- Sử dụng định dạng markdown với các tiêu đề phù hợp
+- Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng
+- Đảm bảo câu trả lời duy trì tính liên tục với lịch sử hội thoại
+- Liệt kê tối đa 5 nguồn tham khảo quan trọng nhất ở cuối phần "Tài liệu tham khảo". Rõ ràng chỉ ra mỗi nguồn từ Đoạn văn bản(DC), và bao gồm đường dẫn file nếu có, theo định dạng: [DC] đường_dẫn_file
+- Nếu không biết câu trả lời, hãy nói như vậy
+- Không bao gồm thông tin không có trong Đoạn văn bản
+- Yêu cầu thêm của người dùng: {user_prompt}
 
-Response:"""
+Trả lời:"""
 
 # TODO: deprecated
-PROMPTS[
-    "similarity_check"
-] = """Please analyze the similarity between these two questions:
+PROMPTS["similarity_check"] = """Hãy phân tích độ tương đồng giữa hai câu hỏi:
 
-Question 1: {original_prompt}
-Question 2: {cached_prompt}
+Câu hỏi 1: {original_prompt}
+Câu hỏi 2: {cached_prompt}
 
-Please evaluate whether these two questions are semantically similar, and whether the answer to Question 2 can be used to answer Question 1, provide a similarity score between 0 and 1 directly.
+Hãy đánh giá xem hai câu hỏi này có tương đồng về ngữ nghĩa không, và liệu câu trả lời cho Câu hỏi 2 có thể dùng để trả lời Câu hỏi 1 không, cung cấp điểm tương đồng từ 0 đến 1.
 
-Similarity score criteria:
-0: Completely unrelated or answer cannot be reused, including but not limited to:
-   - The questions have different topics
-   - The locations mentioned in the questions are different
-   - The times mentioned in the questions are different
-   - The specific individuals mentioned in the questions are different
-   - The specific events mentioned in the questions are different
-   - The background information in the questions is different
-   - The key conditions in the questions are different
-1: Identical and answer can be directly reused
-0.5: Partially related and answer needs modification to be used
-Return only a number between 0-1, without any additional content.
+Tiêu chí điểm tương đồng:
+0: Hoàn toàn không liên quan hoặc không thể tái sử dụng câu trả lời, bao gồm nhưng không giới hạn:
+   - Câu hỏi có chủ đề khác nhau
+   - Địa điểm được đề cập khác nhau
+   - Thời gian được đề cập khác nhau
+   - Cá nhân cụ thể được đề cập khác nhau
+   - Sự kiện cụ thể được đề cập khác nhau
+   - Thông tin nền khác nhau
+   - Điều kiện chính khác nhau
+1: Giống hệt và có thể tái sử dụng câu trả lời trực tiếp
+0.5: Có liên quan một phần và cần điều chỉnh câu trả lời
+Chỉ trả về một số từ 0-1, không có nội dung bổ sung.
 """

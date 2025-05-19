@@ -285,6 +285,25 @@ class MongoDocStatusStorage(DocStatusStorage):
             )
             for doc in result
         }
+    async def delete(self, ids: list[str]) -> None:
+        """Delete specific records from storage by their IDs
+
+        Args:
+            ids (list[str]): List of document IDs to be deleted from storage
+
+        Returns:
+            None
+        """
+        if not ids:
+            return
+
+        try:
+            result = await self._data.delete_many({"_id": {"$in": ids}})
+            logger.debug(
+                f"Successfully deleted {result.deleted_count} records from {self.namespace}"
+            )
+        except Exception as e:
+            logger.error(f"Error while deleting records from {self.namespace}: {e}")
 
     async def index_done_callback(self) -> None:
         # Mongo handles persistence automatically
