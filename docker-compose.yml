@@ -1,12 +1,9 @@
 services:
   lightrag:
+    networks:
+      - lightrag
     container_name: lightrag
-    image: ghcr.io/hkuds/lightrag:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-      tags:
-        - ghcr.io/hkuds/lightrag:latest
+    build: .
     ports:
       - "${PORT:-9621}:9621"
     volumes:
@@ -16,6 +13,83 @@ services:
       - ./.env:/app/.env
     env_file:
       - .env
-    restart: unless-stopped
+    restart: always
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+      - neo4j
+      - postgres
+      # - mongodb
+      
+  # mongodb:
+    # container_name: mongodb
+    # restart: always
+    # networks:
+      # - lightrag
+    # image: mongodb/mongodb-community-server:7.0.3-ubi8
+    # environment:
+      # - MONGO_INITDB_ROOT_USERNAME=root
+      # - MONGO_INITDB_ROOT_PASSWORD=mongodb123
+      # - MONGO_INITDB_DATABASE=LightRAG
+    # ports:
+      # - "27017:27017"
+    # volumes:
+      # - ./data/mongodb:/data/db
+      
+      
+  redis:
+    image: redis:6.2-alpine
+    container_name: redis
+    networks:
+      - lightrag
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    #  --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes: 
+      - ./data/redis:/data
+    
+
+  neo4j:
+    image: neo4j:5.26.4-community
+    container_name: neo4j
+    restart: always
+    networks:
+      - lightrag
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_server_bolt_listen__address=0.0.0.0:7687
+      - NEO4J_server_bolt_advertised__address=neo4j:7687
+    volumes:
+      - ./data/neo4j/plugins:/var/lib/neo4j/plugins
+      - ./data/neo4j/import:/var/lib/neo4j/import
+      - ./data/neo4j/data:/data
+      - ./data/neo4j/backups:/backups
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  postgres:
+    image: ankane/pgvector
+    networks:
+      - lightrag
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: vietinfo123
+      POSTGRES_DB: dbstorage
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d/
+    ports:
+      - 5432:5432
+
+networks:
+  lightrag:
+

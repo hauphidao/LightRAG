@@ -13,6 +13,7 @@ env/
 venv/
 *.env*
 .env_example
+.env
 
 # Build / Distribution
 dist/
@@ -67,3 +68,6 @@ test_*
 
 # Cline files
 memory-bank/
+
+data/
+init/
