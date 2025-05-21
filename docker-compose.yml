@@ -4,6 +4,7 @@ services:
       - lightrag
     container_name: lightrag
     build: .
+    
     ports:
       - "${PORT:-9621}:9621"
     volumes:
