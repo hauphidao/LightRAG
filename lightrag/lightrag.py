@@ -239,10 +239,10 @@ class LightRAG:
     namespace_prefix: str = field(default="")
     """Prefix for namespacing stored data across different environments."""
 
-    enable_llm_cache: bool = field(default=bool(os.getenv("ENABLE_LLM_CACHE", False)))
+    enable_llm_cache: bool = field(default=True)
     """Enables caching for LLM responses to avoid redundant computations."""
 
-    enable_llm_cache_for_entity_extract: bool = field(default=bool(os.getenv("ENABLE_LLM_CACHE_FOR_EXTRACT", False)))
+    enable_llm_cache_for_entity_extract: bool = field(default=True)
     """If True, enables caching for entity extraction steps to reduce LLM costs."""
 
     # Extensions
