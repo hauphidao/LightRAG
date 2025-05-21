@@ -12,14 +12,65 @@ PROMPTS["DEFAULT_COMPLETION_DELIMITER"] = "<|COMPLETE|>"
 
 # Các loại thực thể phổ biến trong văn bản hành chính
 PROMPTS["DEFAULT_ENTITY_TYPES"] = [
-    "cơ_quan",  # Cơ quan ban hành
-    "người",    # Người thực hiện/nhận văn bản
-    "địa_điểm", # Địa điểm liên quan
-    "thời_gian", # Thời gian thực hiện
-    "số_văn_bản", # Số hiệu văn bản
-    "loại_văn_bản", # Loại văn bản (nghị quyết, quyết định, công văn...)
-    "nội_dung",  # Nội dung chính của văn bản
-    "hành_động", # Hành động thực hiện
+    "tên_cơ_quan",
+    "đơn_vị_trực_thuộc",
+    "họ_và_tên",
+    "chức_vụ",
+    "mã_số_cán_bộ",
+    "danh_xưng",
+    "tên_địa_phương",
+    "địa_chỉ",
+    "ngày_ban_hành",
+    "thời_hạn_hiệu_lực",
+    "thời_gian_thực_hiện",
+    "loại_văn_bản",
+    "số_hiệu_văn_bản",
+    "trích_yếu_nội_dung",
+    "căn_cứ_pháp_lý",
+    "tên_văn_bản_pháp_lý",
+    "điều_khoản_viện_dẫn",
+    "hành_động_nghiệp_vụ",
+    "đối_tượng_thực_hiện",
+    "văn_bản_đính_kèm",
+    "lĩnh_vực_quản_lý",
+    "số_liệu_định_lượng",
+    "mức_lương_hỗ_trợ",
+    "tên_dự_án_chương_trình",
+    "tên_chức_danh_ngạch",
+    "cơ_quan_tiếp_nhận",
+    "cơ_quan_phối_hợp",
+    "cơ_quan_tham_mưu",
+    "loại_hồ_sơ",
+    "trạng_thái_xử_lý",
+    "phương_thức_xử_lý",
+    "ngày_tiếp_nhận",
+    "ngày_trả_kết_quả",
+    "tên_người_ký",
+    "chức_vụ_người_ký",
+    "cơ_sở_pháp_lý",
+    "tên_đơn_vị_sử_dụng",
+    "tài_sản_công",
+    "hình_thức_thực_hiện",
+    "mục_đích_sử_dụng",
+    "tên_chức_năng",
+    "mã_văn_bản",
+    "đơn_vị_chủ_trì",
+    "đơn_vị_phối_hợp",
+    "tên_nghị_quyết",
+    "ngày_ký_kết",
+    "tên_hồ_sơ",
+    "số_tài_liệu_đính_kèm",
+    "điều_kiện_áp_dụng",
+    "đối_tượng_áp_dụng",
+    "đối_tượng_thực_hiện",
+    "tên_hệ_thống",
+    "tên_hành_động",
+    "tên_bộ_luật",
+    "tên_giấy_tờ",
+    "thuật_ngữ_liên_quan",
+    "tên_điều_khoản",
+    "tên_hội_đồng",
+    "tên_tổ_chức",
 ]
 
 PROMPTS["DEFAULT_USER_PROMPT"] = "n/a"
@@ -29,7 +80,7 @@ Trích xuất thông tin từ văn bản hành chính tiếng Việt theo các b
 
 ---Các bước---
 1. Xác định các thực thể. Với mỗi thực thể, trích xuất:
-- tên_thực_thể: Tên của thực thể
+- tên_thực_thể: Tên của thực thể (Nếu phát hiện có dấu hiệu bất thường như dư dấu khoảng trắng, sai chính tả hãy sửa lại cho chính xác)
 - loại_thực_thể: Một trong các loại sau: [{entity_types}]
 - mô_tả: Mô tả ngắn gọn về thực thể
 Định dạng: ("entity"{tuple_delimiter}<tên_thực_thể>{tuple_delimiter}<loại_thực_thể>{tuple_delimiter}<mô_tả>)
